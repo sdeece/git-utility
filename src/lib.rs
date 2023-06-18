@@ -2,7 +2,7 @@ use std::{
   env,
   error::Error,
   collections::HashMap,
-  process::Command,
+  process::{Command},
 };
 
 #[derive(Debug, PartialEq)]
@@ -36,30 +36,28 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
   let Config { query, is_new_commit } = config;
 
-  let _ = Command::new("git")
-    .args(["add", "src"])
-    .output()
-    .expect("Failed add to index");
-
-  let mut commit_command = vec!["commit".to_string()];
-  let mut push_command = vec!["push".to_string(), "origin".to_string(), format!("origin feature/TFS-{}", query)];
+  let commit_message = &format!("-m {}", mock.get(&query).unwrap())[..];
+  let mut commit_command = vec!["commit"];
+  let mut push_command = vec!["push"];
 
   if is_new_commit {
-    let message = format!("-m {}", mock.get(&query).unwrap());
-    commit_command.push(message);
+    commit_command.push(commit_message);
   } else {
-    commit_command.push("--amend".to_string());
-    commit_command.push("--no-edit".to_string());
-    push_command.push("-f".to_string());
+    commit_command.push("--amend");
+    commit_command.push("--no-edit");
+    push_command.push("-f");
   }
 
-  println!("{:?}", push_command);
-  let c_status = Command::new("git").args(commit_command).status().unwrap();
-  let p_status = Command::new("git").args(push_command).status().unwrap();
-  println!("{c_status}");
-  println!("{p_status}");
+  let _ = git_command(vec!["add", "src"]);
+  let _ = git_command(commit_command);
+  let _ = git_command(push_command);
 
   Ok(())
+}
+
+fn git_command(args: Vec<&str>) -> Result<(), Box<dyn Error>> {
+  let status = Command::new("git").args(args).status()?;
+  Ok(println!("{status}"))
 }
 
 #[cfg(test)]
