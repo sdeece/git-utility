@@ -7,14 +7,14 @@ use std::{
 
 #[derive(Debug, PartialEq)]
 pub struct Config {
-  path: String,
   query: String,
   is_new_commit: bool,
 }
 
 impl Config {
   pub fn build(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
-    let path = args.next().unwrap();
+    args.next();
+
     let query = match args.next() {
       Some(arg) => arg,
       None => return Err("You should type number of task"),
@@ -25,42 +25,54 @@ impl Config {
       None => false,
     };
 
-    Ok(Config { path, query, is_new_commit })
+    Ok(Config { query, is_new_commit })
   }
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
   // TODO: replace mock on request in TFS
   let mut mock = HashMap::new();
-  mock.insert("555123".to_string(), "feature/TFS-555123 [FE]: some commit".to_string());
+  mock.insert("555123".to_string(), "feature/TFS-555123 [FE]: some commit");
 
-  let Config { path, query, is_new_commit } = config;
-  println!("{path}");
-  println!("{query}");
-  println!("{is_new_commit}");
+  let Config { query, is_new_commit } = config;
 
-  let _  = Command::new("git")
+  let _ = Command::new("git")
     .args(["add", "src"])
     .output()
     .expect("Failed add to index");
 
+  let mut commit_command = vec!["commit".to_string()];
+  let mut push_command = vec!["push".to_string(), "origin".to_string(), format!("origin feature/TFS-{}", query)];
+
   if is_new_commit {
-    let commit_message = format!("-m {}", mock.get(&query).unwrap());
-    let _ = Command::new("git")
-      .args(["commit".to_string(), commit_message])
-      .output()
-      .expect("Failed create commit");
+    let message = format!("-m {}", mock.get(&query).unwrap());
+    commit_command.push(message);
   } else {
-    let _ = Command::new("git")
-      .arg("--amend --no-edit")
-      .output()
-      .expect("Failed write to commit");
+    commit_command.push("--amend".to_string());
+    commit_command.push("--no-edit".to_string());
+    push_command.push("-f".to_string());
   }
 
-  let _ = Command::new("git")
-    .args(["push".to_string(), "origin".to_string(), format!("feature/TFS-{}", query)])
-    .output()
-    .expect("Failed push into repo");
+  let _ = Command::new("git").args(commit_command).output().unwrap();
+  let _ = Command::new("git").args(push_command).output().unwrap();
+
+  // if is_new_commit {
+  //   let commit_message = format!("-m {}", mock.get(&query).unwrap());
+  //   let _ = Command::new("git")
+  //     .args(["commit".to_string(), commit_message])
+  //     .output()
+  //     .expect("Failed create commit");
+  // } else {
+  //   let _ = Command::new("git")
+  //     .args(["commit", "--amend", "--no-edit"])
+  //     .status()
+  //     .expect("Failed write to commit");
+  // }
+
+  // let _ = Command::new("git")
+  //   .args(["push"])
+  //   .status()
+  //   .expect("Failed push into repo");
 
   Ok(())
 }
@@ -72,8 +84,8 @@ mod tests {
   #[test]
   fn create_config() {
     let mut args = vec![String::from("/some/path"), String::from("555123")].into_iter();
+    args.next();
 
-    let path = args.next().unwrap();
     let query = match args.next() {
       Some(arg) => arg,
       None => "nothing".to_string(),
@@ -83,6 +95,6 @@ mod tests {
       None => false,
     };
 
-    assert_eq!(Ok(Config { path, query, is_new_commit }), Config::build(args));
+    assert_eq!(Ok(Config { query, is_new_commit }), Config::build(args));
   }
 }
