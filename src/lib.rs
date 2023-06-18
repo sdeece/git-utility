@@ -56,24 +56,6 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
   let _ = Command::new("git").args(commit_command).output().unwrap();
   let _ = Command::new("git").args(push_command).output().unwrap();
 
-  // if is_new_commit {
-  //   let commit_message = format!("-m {}", mock.get(&query).unwrap());
-  //   let _ = Command::new("git")
-  //     .args(["commit".to_string(), commit_message])
-  //     .output()
-  //     .expect("Failed create commit");
-  // } else {
-  //   let _ = Command::new("git")
-  //     .args(["commit", "--amend", "--no-edit"])
-  //     .status()
-  //     .expect("Failed write to commit");
-  // }
-
-  // let _ = Command::new("git")
-  //   .args(["push"])
-  //   .status()
-  //   .expect("Failed push into repo");
-
   Ok(())
 }
 
