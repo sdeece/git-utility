@@ -53,8 +53,11 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     push_command.push("-f".to_string());
   }
 
-  let _ = Command::new("git").args(commit_command).output().unwrap();
-  let _ = Command::new("git").args(push_command).output().unwrap();
+  println!("{:?}", push_command);
+  let c_status = Command::new("git").args(commit_command).status().unwrap();
+  let p_status = Command::new("git").args(push_command).status().unwrap();
+  println!("{c_status}");
+  println!("{p_status}");
 
   Ok(())
 }
